@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -28,21 +29,23 @@ func sortSequential(toSort [][]int) [][]int {
 }
 
 func sortConcurrent(toSort [][]int) [][]int {
-	var sorted [][]int
-	var done = make(chan bool)
+	var wg sync.WaitGroup
+	var mu sync.Mutex
 
-	for _, subArray := range toSort {
-		go func(subArray []int) {
-			defer func() { done <- true }()
-			sort.Ints(subArray)
-			sorted = append(sorted, subArray)
-		}(subArray)
+	sorted := make([][]int, len(toSort))
+
+	for i, subArray := range toSort {
+		wg.Add(1)
+		go func(index int, arr []int) {
+			defer wg.Done()
+			sort.Ints(arr)
+			mu.Lock()
+			sorted[index] = arr
+			mu.Unlock()
+		}(i, append([]int{}, subArray...)) // Create a copy of the subarray for each goroutine
 	}
 
-	for range toSort {
-		<-done
-	}
-
+	wg.Wait()
 	return sorted
 }
 
