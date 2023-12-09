@@ -90,7 +90,7 @@ func main() {
 	router.POST("/process-single", processSingle)
 	router.POST("/process-concurrent", processConcurrent)
 
-	if err := router.Run(":8000"); err != nil {
+	if err := router.Run(":10000"); err != nil {
 		panic(err)
 	}
 }
